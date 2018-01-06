@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>PolyPNG by zcyzcy88 | 点击就变图片生成器</title>
+	<style type="text/css">
+		body {
+			line-height: 1.5;
+			transition: background-color 0.5s;
+		}
+		p {
+			max-width: 500px;
+			padding: 5px 20px;
+			background-color: rgba(255, 255, 255, 0.6)
+		}
+		img {
+			max-width: 400px;
+			height: auto;
+			margin: 50px;
+		}
+	</style>
+</head>
+<body>
+	<p>
+		<a href="http://tieba.baidu.com/p/3879783064">
+			原教程和原理<br />
+			Origin and principle
+		</a>
+	</p>
+	<p>
+		<a href="https://github.com/zcyzcy88/PolyPNG">
+			源代码<br />
+			Source Code
+		</a>
+	</p>
+
+	<br />
+
+	<p>
+		选择图片，点击生成，右键保存。<br />
+		Chose images, chick "Create" button, save image by right-click.
+	</p>
+	<p>
+		生成的图片尺寸是图片1的尺寸。<br />
+		The size of created image is same as Image 1.
+	</p>
+
+	<br />
+
+	<p>
+		<label>
+			图片1（较亮）/ Image 1 (light)：<br />
+			<input id="input1" type="file" accept="image" onchange="load1();">
+		</label>
+	</p>
+	<p>
+		<label>
+			图片2（较暗）/ Image 2 (dark)：<br />
+			<input id="input2" type="file" accept="image" onchange="load2();">
+		</label>
+	</p>
+
+	<br />
+
+	<p>
+		<button onclick="run();"> 生成 / Create </button>
+		<button onclick="toggle();"> 切换背景颜色 / Toggle background color </button>
+	</p>
+
+	<img id="output" />
+
+	<script type="text/javascript">
+		'use strict';
+
+		var img1 = document.createElement('img')
+		var img2 = document.createElement('img')
+
+		function load1() {
+			var reader = new FileReader()
+			reader.onload = function () {
+				img1.src = reader.result
+			}
+			reader.readAsDataURL(input1.files[0])
+		}
+		function load2() {
+			var reader = new FileReader()
+			reader.onload = function () {
+				img2.src = reader.result
+			}
+			reader.readAsDataURL(input2.files[0])
+		}
+
+		function run() {
+			// create context
+			var c = document.createElement('canvas')
+			c.width = img1.width
+			c.height = img1.height
+			var ctx = c.getContext("2d")
+
+			// get data
+			ctx.drawImage(img1, 0, 0)
+			var data1 = ctx.getImageData(0, 0, c.width, c.height) //一维数组
+			ctx.drawImage(img2, 0, 0, c.width, c.height)
+			var data2 = ctx.getImageData(0, 0, c.width, c.height)
+
+			// create blank data
+			var data3 = ctx.createImageData(c.width, c.height)
+
+			// process
+			var i = 0
+			var len = data1.data.length
+
+			var R1, G1, B1, avg1 // light
+			var R2, G2, B2, avg2 // dark
+			var R3, G3, B3, A3 // output, A is alpha
+
+			for (; i < len; i += 4) {
+				// oho, interval question，0~255 or 0~1?
+				R1 = data1.data[i + 0] // 0~255
+				G1 = data1.data[i + 1] // 0~255
+				B1 = data1.data[i + 2] // 0~255
+				avg1 = (R1 + G1 + B1) / 3 // 0~255
+
+				R2 = data2.data[i + 0]
+				G2 = data2.data[i + 1]
+				B2 = data2.data[i + 2]
+				avg2 = (R2 + G2 + B2) / 3
+
+				A3 = avg2 - avg1 + 255 // 0~255
+				if (A3 === 0) {
+					A3 = 0.0001
+				}
+				R3 = R2 * 255 / A3 // equal to R2 / A3 * 255
+				G3 = G2 * 255 / A3
+				B3 = B2 * 255 / A3
+
+				data3.data[i + 0] = R3
+				data3.data[i + 1] = G3
+				data3.data[i + 2] = B3
+				data3.data[i + 3] = A3
+			}
+
+			// save
+			ctx.putImageData(data3, 0, 0)
+			output.src = c.toDataURL("image/png")
+		}
+
+
+		var black = false
+
+		function toggle() {
+			if (black) {
+				document.body.style.backgroundColor = "#FFF"
+			} else {
+				document.body.style.backgroundColor = "#000"
+			}
+			black = !black
+		}
+	</script>
+</body>
+</html>
